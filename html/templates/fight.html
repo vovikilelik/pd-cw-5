@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Fight</title>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link rel="stylesheet" href="static/styles.css" >
+		<script src="static/scripts.js"></script>
+		<script>
+			const ACTOR = 'actor';
+			const ENEMY = 'enemy';
+
+			const initJson = {% autoescape false %}{{ init_data }}{% endautoescape %};
+
+			const store = { data: JSON.parse(initJson) };
+
+			function setBarValue(side, bar, value) {
+				const e = document.querySelector(`.${side} .${bar} .value`);
+
+				e.style.width = `${value}%`;
+			}
+
+			function applyData(side, unit) {
+				const { name, hit_points, stamina_points, skill, actor_class } = unit;
+
+				setBarValue(side, 'hit', hit_points / actor_class.max_hit_points * 100);
+				setBarValue(side, 'stamina', stamina_points / actor_class.max_stamina_points * 100);
+
+				document.querySelector(`.${side} .name`).innerText = name;
+				document.querySelector(`.${side} .strike`).innerText = skill.name;
+
+				document.querySelector(`.${side} .hero`).classList.add(actor_class.name);
+			}
+
+			function fireEffect(side, effect, timeout = 500) {
+				const e = document.querySelector(`.${side} .${effect}`);
+
+				e.classList.add('start-effect');
+
+				return new Promise(resolve => {
+					setTimeout(() => {
+						e.classList.remove('start-effect');
+						resolve();
+					}, timeout);
+				});
+			}
+
+			function turn(action) {
+				return sendAction(store.data, action).then(({ actor, enemy, effect, redirect }) => {
+					store.data = { actor, enemy };
+
+					if (effect) {
+						switch (effect.target) {
+							case ACTOR:
+								applyData(ENEMY, enemy);
+								fireEffect(effect.target, effect.name).then(() => applyData(ACTOR, actor));
+								break;
+
+							case ENEMY:
+								applyData(ACTOR, actor);
+								fireEffect(effect.target, effect.name).then(() => applyData(ENEMY, enemy));
+								break;
+						}
+					} else {
+						applyData(ACTOR, actor);
+						applyData(ENEMY, enemy);
+					}
+
+					if (redirect) {
+						setTimeout(() => { document.location.href = redirect; }, 1000);
+					}
+				});
+			}
+
+			function bit(side, target) {
+				const action = { type: 'weapon', side, target };
+				fireEffect(target, 'bit').then(() => turn(action));
+			}
+
+			function wait(side, target) {
+				const action = { type: 'armor', side, target };
+				fireEffect(target, 'wait').then(() => turn(action));
+			}
+
+			function skill(side, target) {
+				const action = { type: 'skill', side, target };
+				fireEffect(target, 'bit').then(() => turn(action));
+			}
+
+			function exit() {
+
+			}
+		</script>
+		<style>
+			.battlefield {
+				display: flex;
+				width: 600px;
+				height: 400px;
+				background: linear-gradient(0deg, green 5%, yellowgreen 30%, gold 31%, lightgray 70%, deepskyblue);
+			}
+
+			.side {
+				width: 50%;
+
+				padding: 20px;
+				display: flex;
+				flex-direction: column;
+			}
+
+			.name {
+				font-weight: bold;
+				font-size: 150%;
+			}
+
+			.hero {
+				flex: 1 1 auto;
+				position: relative;
+			}
+
+			.bar {
+				border: 1px solid black;
+				box-shadow: 2px 2px 4px 0 rgba(0, 0, 0, 0.25);
+
+				height: 20px;
+
+				position: relative;
+			}
+
+			.bar .value {
+				position: absolute;
+				left: 0;
+				top: 0;
+				width: 100%;
+				height: 100%;
+
+				transition: all 1s;
+			}
+
+			.hit .value {
+				background: darkred;
+			}
+
+			.stamina {
+				height: 10px;
+				width: 50%;
+			}
+
+			.stamina .value {
+				background: dodgerblue;
+			}
+
+			.skills {
+				display: flex;
+				justify-content: space-between;
+			}
+
+			.skills > * {
+				width: 33%;
+				margin: 5px;
+			}
+
+			.effect {
+				opacity: 0;
+				position: absolute;
+				left: 50%;
+				top: 50%;
+
+				transform: scale(0);
+
+				transition: all 500ms;
+
+				width: 3em;
+				height: 3em;
+			}
+
+			.start-effect {
+				opacity: 1;
+				transform: scale(2);
+			}
+
+			.skill {
+				cursor: pointer;
+
+				padding: 10px;
+
+				transition: all 0.25s;
+
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				text-align: center;
+
+				text-shadow: 1px 1px 5px white;
+				font-weight: bold;
+			}
+
+			.skill:hover {
+				transform: scale(1.1);
+			}
+
+			.skill:active {
+				transform: scale(0.75);
+			}
+
+			.enemy {
+				align-items: end;
+			}
+
+			.enemy .hit,
+			.enemy .hero,
+			.enemy .skills {
+				align-self: stretch;
+			}
+
+			.enemy .skills {
+				opacity: 0.5;
+				pointer-events: none;
+			}
+
+			.weapon, .shield, .strike, .bit, .wait, .thief, .warrior {
+				background-size: contain;
+				background-repeat: no-repeat;
+				background-position: center;
+			}
+
+			.shield {
+				background-image: url('static/shield.png');
+			}
+
+			.weapon {
+				background-image: url('static/sword.png');
+			}
+
+			.strike {
+
+			}
+
+			.bit {
+				background-image: url('static/bit.png');
+			}
+
+			.wait {
+				background-image: url('static/wait.png');
+			}
+
+			.warrior {
+				background-image: url('static/warrior.png');
+			}
+
+			.thief {
+				background-image: url('static/thief.png');
+			}
+		</style>
+	</head>
+	<body>
+		<div class="frame">
+			<div class="battlefield">
+				<div class="actor side">
+					<div class="name">Name</div>
+					<div class="bar hit">
+						<div class="value"></div>
+					</div>
+					<div class="bar stamina">
+						<div class="value"></div>
+					</div>
+					<div class="hero">
+						<div class="bit effect"></div>
+						<div class="wait effect"></div>
+					</div>
+					<div class="skills">
+						<div class="skill weapon" onClick="bit(ACTOR, ENEMY)"></div>
+						<div class="skill shield" onClick="wait(ACTOR, ACTOR)"></div>
+						<div class="skill strike" onClick="skill(ACTOR, ENEMY)"></div>
+					</div>
+				</div>
+				<div class="enemy side">
+					<div class="name">Name</div>
+					<div class="bar hit">
+						<div class="value"></div>
+					</div>
+					<div class="bar stamina">
+						<div class="value"></div>
+					</div>
+					<div class="hero">
+						<div class="bit effect"></div>
+						<div class="wait effect"></div>
+					</div>
+					<div class="skills">
+						<div class="skill strike"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<script>
+			applyData(ACTOR, store.data.actor);
+			applyData(ENEMY, store.data.enemy);
+		</script>
+	</body>
+</html>

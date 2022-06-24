@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Game</title>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link rel="stylesheet" href="static/styles.css" >
+		<style type="text/css">
+			.label {
+				display: flex;
+				flex-direction: column;
+			}
+
+			.vertical {
+				display: flex;
+				flex-direction: column;
+			}
+
+			.vertical > *:not(:first-child) {
+				margin-top: 1em;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="frame">
+			<div class="header">
+				<h1>Кто ты, странник?</h1>
+			</div>
+			<form class="content vertical" method="post" action="fight">
+				<label class="label">
+					Твоё имя:
+					<input name="name">
+				</label>
+				<label class="label">
+					Твоё призвание:
+					<select name="actorClass">
+						<option value="thief">Ловкий хитрец</option>
+						<option value="warrior">Стойкий боец</option>
+					</select>
+				</label>
+				<label class="label">
+					Твой характер:
+					<select name="character">
+						<option name="light">Я бесстрашный, как Чип и Дейл</option>
+						<option name="middle">Я быстрый, как Джеки-Чан</option>
+						<option name="heavy">Я стойкий, как Халк Хоган</option>
+					</select>
+				</label>
+				<button type="submit">Так точно!</button>
+			</form>
+		</div>
+	</body>
+</html>
